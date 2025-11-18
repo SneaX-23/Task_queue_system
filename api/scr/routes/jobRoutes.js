@@ -2,6 +2,7 @@ import express from "express";
 import { jobQueue } from "../queue.js";
 import { rataLimiter } from "../middleware/rateLimiter.js";
 import { tokenBucket } from "../middleware/tokenBucket.js";
+import { Job } from "bullmq";
 
 const router = express.Router();
 
@@ -101,4 +102,40 @@ router.get("/:id", async(req, res) => {
     }
 })
 
+router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const job = await Job.fromId(jobQueue, id);
+
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: `Job ${id} not found`,
+            });
+        }
+        const state = await job.getState()
+        if(state === "waiting" || state === "delayed"){
+            await job.remove();
+
+            return res.json({
+                success: true,
+                message: `Job ${id} removed successfully`
+            });
+        }else{
+            return res.status(400).json({
+            success: false,
+            message: `Job ${id} is ${state}.`,
+        });
+        }
+    
+        
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
 export default router;
