@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const validate_1 = require("../middleware/validate");
+const email_schema_1 = require("../schemas/email.schema");
+const email_controller_1 = require("../controllers/email.controller");
+const tockenBucket_1 = require("../middleware/tockenBucket");
+const router = (0, express_1.Router)();
+router.post("/send", (0, tockenBucket_1.tokenBucket)({ capacity: 10, refillRatePerSec: 0.5 }), (0, validate_1.validate)(email_schema_1.CreateEmailSchema), email_controller_1.EmailController.send);
+exports.default = router;
